@@ -25,7 +25,7 @@ uuid = -> { return SecureRandom.uuid.upcase }
 # Migrate Personne
 query = OpenConnectEntry.query('SELECT nom, prenom, role, mdp, mail, classe, promo FROM personne p JOIN classe c ON p.id_classe=c.id_classe JOIN promo pr ON c.id_promo=pr.id_promo')
 query.each_with_index do |row, idx|
-  query2 = OpenConnectSortie.prepare('SELECT id_classe FROM classe c JOIN promo p ON c.id_promo=p.id_promo WHERE classe = ? AND promo = ?')
+  query2 = OpenConnectSortie.prepare('SELECT id_classe FROM classe c JOIN promo p ON c.id_promo=p.id_promo WHERE c.intitule = ? AND p.intitule = ?')
   query2 = query2.execute(row['classe'], fixPromosNames(row['promo']))
   query2.each do |row2|
     response = OpenConnectSortie.prepare('INSERT INTO personne(id_personne, id_classe, nom, prenom, role, password, mail, token, image) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?)')
@@ -39,8 +39,8 @@ puts '--- Exec ended for Personne'
 # Migrate Matiere
 query = OpenConnectEntry.query('SELECT intitule FROM matiere')
 query.each_with_index do |row, idx|
-  response = OpenConnectSortie.prepare('INSERT INTO matiere(id_matiere, intitule, validationAdmin, dateCreation) VALUES ( ?, ?, ?, ?)')
-  response.execute(uuid.call, regexEncode(row['intitule']), 1, nil)
+  response = OpenConnectSortie.prepare('INSERT INTO matiere(id_matiere, intitule, validationAdmin) VALUES ( ?, ?, ?)')
+  response.execute(uuid.call, regexEncode(row['intitule']), 1)
   puts "Exec for MATIERE => #{idx}"
 end
 puts '--- Exec ended for Matiere'
@@ -58,11 +58,11 @@ query.each_with_index do |row, idx|
       query4 = OpenConnectEntry.prepare('SELECT promo FROM promo WHERE id_promo = ?')
       query4 = query4.execute(row3['id_promo'])
       query4.each do |row4|
-        query5 = OpenConnectSortie.prepare('SELECT id_promo FROM promo WHERE promo = ?')
+        query5 = OpenConnectSortie.prepare('SELECT id_promo FROM promo WHERE intitule = ?')
         query5 = query5.execute(fixPromosNames(row4['promo']))
         query5.each do |row5|
-          response = OpenConnectSortie.prepare('INSERT INTO `cours`(`id_cours`, `id_matiere`, `id_promo`, `intitule`, `heure`, `date`, `dateCreation`, `commentaires`, `nbInscrits`, `nbParticipants`, `duree`, `status`, `stage`, `salle`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-          response.execute(uuid.call, row2['id_matiere'], row5['id_promo'], regexEncode(row['intitule']), row['heure'], row['date'], nil, regexEncode(row['commentaires']), row['inscrits'], row['participants'], row['duree'], convertBytesToInt(row['status']), 0, nil)
+          response = OpenConnectSortie.prepare('INSERT INTO `cours`(`id_cours`, `id_matiere`, `id_promo`, `intitule`, `heure`, `date`, `commentaires`, `nbInscrits`, `nbParticipants`, `duree`, `status`, `stage`, `salle`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+          response.execute(uuid.call, row2['id_matiere'], row5['id_promo'], regexEncode(row['intitule']), row['heure'], row['date'], regexEncode(row['commentaires']), row['inscrits'], row['participants'], row['duree'], convertBytesToInt(row['status']), 0, nil)
         end
       end
     end
@@ -81,12 +81,8 @@ query.each_with_index do |row, idx|
     query3 = OpenConnectSortie.prepare('SELECT id_cours FROM cours WHERE intitule = ? AND date = ?')
     query3 = query3.execute(row['intitule'], row['date'])
     query3.each do |row3|
-      # puts row2['id_personne']
-      # puts row3['id_cours']
-      # puts row['rang_personne']
       response = OpenConnectSortie.prepare('INSERT INTO personne_cours(id_personne, id_cours, rang_personne) VALUES (?, ?, ?)')
       response.execute(row2['id_personne'], row3['id_cours'], convertBytesToInt(row['rang_personne']))
-      # puts response.fields
     end
   end
   puts "Exec for PERSONNE_COURS => #{idx}"
@@ -100,8 +96,8 @@ query.each_with_index do |row, idx|
   query2 = OpenConnectSortie.prepare('SELECT id_matiere FROM matiere WHERE intitule = ?')
   query2 = query2.execute(row['matiere'])
   query2.each do |row2|
-    response = OpenConnectSortie.prepare('INSERT INTO proposition(id_proposition, id_createur, id_matiere, nb_vote, dateCreation) VALUES (?, ?, ?, ?, ?)')
-    response.execute(uuid.call, nil, row2['id_matiere'], 0, nil)
+    response = OpenConnectSortie.prepare('INSERT INTO proposition(id_proposition, id_createur, id_matiere) VALUES (?, ?, ?)')
+    response.execute(uuid.call, nil, row2['id_matiere'])
   end
   puts "Exec for PROPOSITION => #{idx}"
 end
@@ -117,7 +113,7 @@ query.each_with_index do |row, idx|
     query2 = OpenConnectSortie.prepare('SELECT id_proposition FROM proposition WHERE id_matiere = ?')
     query2 = query2.execute(row4['id_matiere'])
     query2.each do |row2|
-      query3 = OpenConnectSortie.prepare('SELECT id_promo FROM promo WHERE promo = ?')
+      query3 = OpenConnectSortie.prepare('SELECT id_promo FROM promo WHERE intitule = ?')
       query3 = query3.execute(fixPromosNames(row['promo']))
       query3.each do |row3|
         response = OpenConnectSortie.prepare('INSERT INTO proposition_promo(id_proposition, id_promo) VALUES (?, ?)')
