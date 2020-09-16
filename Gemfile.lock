@@ -1,0 +1,15 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    mysql2 (0.5.3-x64-mingw32)
+    rubysl-securerandom (2.0.0)
+
+PLATFORMS
+  x64-mingw32
+
+DEPENDENCIES
+  mysql2
+  rubysl-securerandom (~> 2.0)
+
+BUNDLED WITH
+   2.1.4

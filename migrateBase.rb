@@ -47,7 +47,7 @@ puts '--- Exec ended for Matiere'
 
 # Checked
 # Migrate Cours
-query = OpenConnectEntry.query('SELECT c.id_cours AS id_cours, c.intitule AS intitule, c.heure AS heure, c.date AS date, c.commentaires AS commentaires, c.nbInscrits as inscrits, c.nbParticipants AS participants, c.duree AS duree, c.status AS status, c.secu AS secu, m.intitule AS matiere FROM cours c JOIN matiere m ON c.id_matiere=m.id_matiere ORDER BY c.date')
+query = OpenConnectEntry.query('SELECT c.id_cours AS id_cours, c.intitule AS intitule, c.heure AS heure, c.date AS date, c.commentaires AS commentaires, c.nbParticipants AS participants, c.duree AS duree, c.status AS status, c.secu AS secu, m.intitule AS matiere FROM cours c JOIN matiere m ON c.id_matiere=m.id_matiere ORDER BY c.date')
 query.each_with_index do |row, idx|
   query2 = OpenConnectSortie.prepare('SELECT id_matiere FROM matiere WHERE intitule = ?')
   query2 = query2.execute(row['matiere'])
@@ -61,8 +61,10 @@ query.each_with_index do |row, idx|
         query5 = OpenConnectSortie.prepare('SELECT id_promo FROM promo WHERE intitule = ?')
         query5 = query5.execute(fixPromosNames(row4['promo']))
         query5.each do |row5|
-          response = OpenConnectSortie.prepare('INSERT INTO `cours`(`id_cours`, `id_matiere`, `id_promo`, `intitule`, `heure`, `date`, `commentaires`, `nbInscrits`, `nbParticipants`, `duree`, `status`, `stage`, `salle`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-          response.execute(uuid.call, row2['id_matiere'], row5['id_promo'], regexEncode(row['intitule']), row['heure'], row['date'], regexEncode(row['commentaires']), row['inscrits'], row['participants'], row['duree'], convertBytesToInt(row['status']), 0, nil)
+
+          # puts type(row['heure']), type(row['date'])
+          response = OpenConnectSortie.prepare('INSERT INTO `cours`(`id_cours`, `id_matiere`, `id_promo`, `intitule`, `date`, `commentaires`, `nbParticipants`, `duree`, `status`, `stage`, `salle`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+          response.execute(uuid.call, row2['id_matiere'], row5['id_promo'], regexEncode(row['intitule']),  DateTime.parse("#{row['date']} #{row['heure']}"), regexEncode(row['commentaires']), row['participants'], row['duree'], convertBytesToInt(row['status']), 0, nil)
         end
       end
     end
@@ -78,8 +80,8 @@ query.each_with_index do |row, idx|
   query2 = OpenConnectSortie.prepare('SELECT id_personne FROM personne WHERE mail = ? AND password = ?')
   query2 = query2.execute(row['mail'], row['mdp'])
   query2.each do |row2|
-    query3 = OpenConnectSortie.prepare('SELECT id_cours FROM cours WHERE intitule = ? AND date = ?')
-    query3 = query3.execute(row['intitule'], row['date'])
+    query3 = OpenConnectSortie.prepare('SELECT id_cours FROM cours WHERE intitule = ?')
+    query3 = query3.execute(row['intitule'])
     query3.each do |row3|
       response = OpenConnectSortie.prepare('INSERT INTO personne_cours(id_personne, id_cours, rang_personne) VALUES (?, ?, ?)')
       response.execute(row2['id_personne'], row3['id_cours'], convertBytesToInt(row['rang_personne']))

@@ -18,7 +18,7 @@ end
 class BaseV2
   def init
     @host = 'localhost'
-    @database = 'tutoratrefontewksp'
+    @database = 'tutoratrefonte'
     @user = 'root'
     @pass = ''
   end
